@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Triveni</string>
+    <string name="title_activity_main">Triveni</string>
+    <string name="package_name">com.shoonya.triveni</string>
+    <string name="custom_url_scheme">com.shoonya.triveni</string>
+</resources>

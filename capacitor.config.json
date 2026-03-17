@@ -1,0 +1,6 @@
+{
+  "appId": "com.shoonya.triveni",
+  "appName": "Triveni",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
