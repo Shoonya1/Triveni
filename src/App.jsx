@@ -41,6 +41,7 @@ const I = {
   X:()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Reset:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>,
   Trash:()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+  Token:()=><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M9 9l3-3 3 3M9 15l3 3 3-3"/><circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.2"/></svg>,
 };
 
 // ─── DATA ──────────────────────────────────────────────
@@ -180,6 +181,7 @@ export default function App(){
     {id:"body",icon:I.Body,label:"Body",c:T.body},
     {id:"spirit",icon:I.Spirit,label:"Spirit",c:T.spirit},
     {id:"nutrition",icon:I.Food,label:"Fuel",c:T.nutr},
+    {id:"token",icon:I.Token,label:"TRV",c:T.accent},
     {id:"profile",icon:I.User,label:"Profile"},
   ];
 
@@ -197,6 +199,7 @@ export default function App(){
           {tab==="spirit"&&view?.t==="medPlay"&&<MeditationPlayer m={view.d} back={()=>setView(null)}/>}
           {tab==="spirit"&&view?.t==="pose"&&<YogaPoseDetail p={view.d} back={()=>setView(null)}/>}
           {tab==="nutrition"&&!view&&<NutritionScreen/>}
+          {tab==="token"&&!view&&<TokenScreen/>}
           {tab==="profile"&&!view&&<ProfileScreen/>}
         </div>
       </div>
@@ -666,6 +669,285 @@ function NutritionScreen(){
       </div>))}
     </div>
   </div>);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOKEN SCREEN
+// ═══════════════════════════════════════════════════════════════
+const TOKEN_DATA = {
+  name: "Triveni", symbol: "TRV", maxSupply: "100,000,000",
+  initialMint: "10,000,000", network: "Polygon (MATIC)",
+  allocations: [
+    { label: "Reward Pool", pct: 60, amount: "60M", color: T.body, desc: "Minted via user rewards" },
+    { label: "Dev & Marketing", pct: 20, amount: "20M", color: T.spirit, desc: "Vested over 2 years" },
+    { label: "Initial Treasury", pct: 10, amount: "10M", color: T.accent, desc: "Minted at deployment" },
+    { label: "Community/Airdrops", pct: 10, amount: "10M", color: T.nutr, desc: "Growth initiatives" },
+  ],
+  activities: [
+    { name: "Workout", emoji: "🏋️", base: 10 },
+    { name: "Meditation", emoji: "🧘", base: 5 },
+    { name: "Nutrition Goal", emoji: "🥗", base: 8 },
+    { name: "Swim", emoji: "🏊", base: 15 },
+    { name: "Run", emoji: "🏃", base: 12 },
+    { name: "Cycle", emoji: "🚴", base: 12 },
+    { name: "IRONMAN Training", emoji: "🔱", base: 25 },
+  ],
+  streaks: [
+    { days: 7, mult: 1.2, label: "7-day" },
+    { days: 30, mult: 1.5, label: "30-day" },
+    { days: 100, mult: 2.0, label: "100-day" },
+    { days: 365, mult: 3.0, label: "365-day" },
+  ],
+};
+
+function TokenScreen() {
+  const [sub, setSub] = useState("overview");
+  // Simulated wallet state
+  const wallet = { balance: 247.5, earned: 312.0, burned: 64.5, streak: 12, dailyUsed: 22.5 };
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      <PH icon={I.Token} title="TRV Token" subtitle="Wellness rewards on Polygon" color={T.accent} />
+      <STabs tabs={["overview", "rewards", "wallet"]} active={sub} onChange={setSub} color={T.accent} />
+
+      {/* ── OVERVIEW TAB ── */}
+      {sub === "overview" && <>
+        {/* Hero Card */}
+        <div style={{ background: `linear-gradient(135deg,${T.accent}14,${T.card})`, border: `1px solid ${T.accent}30`, borderRadius: T.radius.xl, padding: 22, marginBottom: 18, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -30, right: -20, fontSize: 100, opacity: 0.04 }}>🔱</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: `${T.accent}18`, border: `2px solid ${T.accent}35`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🔱</div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: T.font.display }}>{TOKEN_DATA.name}</div>
+              <div style={{ fontSize: 12, color: T.accent, fontWeight: 600, letterSpacing: "0.06em" }}>${TOKEN_DATA.symbol}</div>
+            </div>
+            <div style={{ marginLeft: "auto", background: `${T.success}18`, border: `1px solid ${T.success}30`, borderRadius: T.radius.full, padding: "4px 10px" }}>
+              <span style={{ fontSize: 10, color: T.success, fontWeight: 600 }}>● Polygon</span>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ background: `${T.bg}80`, borderRadius: T.radius.md, padding: "10px 12px" }}>
+              <div style={{ fontSize: 9, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>Max Supply</div>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: T.font.mono }}>{TOKEN_DATA.maxSupply}</div>
+            </div>
+            <div style={{ background: `${T.bg}80`, borderRadius: T.radius.md, padding: "10px 12px" }}>
+              <div style={{ fontSize: 9, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>Initial Mint</div>
+              <div style={{ fontSize: 15, fontWeight: 700, fontFamily: T.font.mono }}>{TOKEN_DATA.initialMint}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tokenomics Breakdown */}
+        <SH>Tokenomics</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: 16, marginBottom: 18 }}>
+          {/* Stacked bar */}
+          <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 14 }}>
+            {TOKEN_DATA.allocations.map((a, i) => (
+              <div key={i} style={{ width: `${a.pct}%`, background: a.color, transition: "width 0.6s" }} />
+            ))}
+          </div>
+          {TOKEN_DATA.allocations.map((a, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < TOKEN_DATA.allocations.length - 1 ? `1px solid ${T.border}` : "none" }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600 }}>{a.label}</div>
+                <div style={{ fontSize: 10.5, color: T.textMuted }}>{a.desc}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: a.color }}>{a.pct}%</div>
+                <div style={{ fontSize: 10, color: T.textDim }}>{a.amount} TRV</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Features */}
+        <SH>Token Features</SH>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 18 }}>
+          {[
+            { emoji: "🔒", title: "Capped Supply", desc: "100M hard cap" },
+            { emoji: "🔥", title: "Deflationary", desc: "Burn on purchases" },
+            { emoji: "⏸️", title: "Pausable", desc: "Emergency freeze" },
+            { emoji: "🛡️", title: "Anti-Abuse", desc: "1000 TRV/day cap" },
+          ].map((f, i) => (
+            <div key={i} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: 14 }}>
+              <div style={{ fontSize: 24, marginBottom: 6 }}>{f.emoji}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{f.title}</div>
+              <div style={{ fontSize: 10.5, color: T.textMuted }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Architecture */}
+        <SH>How It Works</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, overflow: "hidden", marginBottom: 20 }}>
+          {[
+            { step: "1", title: "Complete Activity", desc: "Workout, meditate, or log nutrition", color: T.body },
+            { step: "2", title: "Backend Verifies", desc: "Authorized relayer validates completion", color: T.spirit },
+            { step: "3", title: "Mint TRV Reward", desc: "Tokens minted to your wallet on Polygon", color: T.accent },
+            { step: "4", title: "Spend or Hold", desc: "Unlock premium features or accumulate", color: T.nutr },
+          ].map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < 3 ? `1px solid ${T.border}` : "none" }}>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", background: `${s.color}18`, border: `1px solid ${s.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: s.color, flexShrink: 0 }}>{s.step}</div>
+              <div><div style={{ fontSize: 13, fontWeight: 600 }}>{s.title}</div><div style={{ fontSize: 10.5, color: T.textMuted }}>{s.desc}</div></div>
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {/* ── REWARDS TAB ── */}
+      {sub === "rewards" && <>
+        {/* Activity Rewards */}
+        <SH>Activity Rewards</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, overflow: "hidden", marginBottom: 18 }}>
+          <div style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${T.border}`, background: `${T.bg}60` }}>
+            <div style={{ flex: 1, fontSize: 10, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Activity</div>
+            <div style={{ width: 65, fontSize: 10, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, textAlign: "right" }}>Base</div>
+            <div style={{ width: 65, fontSize: 10, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, textAlign: "right" }}>365-day</div>
+          </div>
+          {TOKEN_DATA.activities.map((a, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", padding: "11px 14px", borderBottom: i < TOKEN_DATA.activities.length - 1 ? `1px solid ${T.border}` : "none" }}>
+              <span style={{ fontSize: 18, marginRight: 10 }}>{a.emoji}</span>
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 500 }}>{a.name}</span>
+              <span style={{ width: 65, fontSize: 13, fontWeight: 600, textAlign: "right", fontFamily: T.font.mono }}>{a.base}</span>
+              <span style={{ width: 65, fontSize: 13, fontWeight: 700, textAlign: "right", fontFamily: T.font.mono, color: T.accent }}>{a.base * 3}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Streak Multipliers */}
+        <SH>Streak Multipliers</SH>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 18 }}>
+          {TOKEN_DATA.streaks.map((s, i) => {
+            const isActive = wallet.streak >= s.days;
+            return (
+              <div key={i} style={{ background: isActive ? `${T.accent}12` : T.card, border: `1px solid ${isActive ? T.accent + "40" : T.border}`, borderRadius: T.radius.lg, padding: "14px 6px", textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: isActive ? T.accent : T.textDim, fontFamily: T.font.mono }}>{s.mult}x</div>
+                <div style={{ fontSize: 9.5, color: isActive ? T.accent : T.textMuted, marginTop: 3, fontWeight: 600 }}>{s.label}</div>
+                {isActive && <div style={{ fontSize: 8, color: T.success, marginTop: 4, fontWeight: 600 }}>✓ Active</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Current streak */}
+        <div style={{ background: `linear-gradient(135deg,${T.accent}10,${T.card})`, border: `1px solid ${T.accent}28`, borderRadius: T.radius.xl, padding: 20, display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
+          <div style={{ width: 50, height: 50, borderRadius: "50%", background: `${T.accent}18`, border: `2px solid ${T.accent}35`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: T.accent }}><I.Fire /></span>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, marginBottom: 2 }}>Current Streak</div>
+            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: T.font.mono }}>{wallet.streak} <span style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>days</span></div>
+            <div style={{ fontSize: 11, color: T.accent, fontWeight: 600 }}>1.2x multiplier active</div>
+          </div>
+        </div>
+
+        {/* Daily Cap */}
+        <SH>Daily Reward Cap</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: 16, marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: T.textMuted }}>Used today</span>
+            <span style={{ fontSize: 12, fontWeight: 600, fontFamily: T.font.mono }}>{wallet.dailyUsed} <span style={{ color: T.textDim }}>/ 1,000 TRV</span></span>
+          </div>
+          <div style={{ height: 6, background: T.border, borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${(wallet.dailyUsed / 1000) * 100}%`, background: `linear-gradient(90deg, ${T.body}, ${T.accent})`, borderRadius: 3, transition: "width 0.4s" }} />
+          </div>
+          <div style={{ fontSize: 10.5, color: T.textMuted, marginTop: 6 }}>{1000 - wallet.dailyUsed} TRV remaining today</div>
+        </div>
+      </>}
+
+      {/* ── WALLET TAB ── */}
+      {sub === "wallet" && <>
+        {/* Balance Card */}
+        <div style={{ background: `linear-gradient(135deg, ${T.accent}16, ${T.card})`, border: `1px solid ${T.accent}30`, borderRadius: T.radius.xl, padding: 24, textAlign: "center", marginBottom: 18, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -40, right: -40, fontSize: 120, opacity: 0.03 }}>🔱</div>
+          <div style={{ fontSize: 10, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600, marginBottom: 6 }}>TRV Balance</div>
+          <div style={{ fontSize: 42, fontWeight: 800, fontFamily: T.font.mono, background: `linear-gradient(135deg, ${T.text} 30%, ${T.accent})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>{wallet.balance.toFixed(1)}</div>
+          <div style={{ fontSize: 13, color: T.accent, fontWeight: 600 }}>TRV</div>
+        </div>
+
+        {/* Stats Row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 9, marginBottom: 18 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: "14px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.success, fontFamily: T.font.mono }}>{wallet.earned.toFixed(0)}</div>
+            <div style={{ fontSize: 9, color: T.textMuted, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Earned</div>
+          </div>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: "14px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.danger, fontFamily: T.font.mono }}>{wallet.burned.toFixed(0)}</div>
+            <div style={{ fontSize: 9, color: T.textMuted, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Burned</div>
+          </div>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: "14px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.accent, fontFamily: T.font.mono }}>{wallet.streak}</div>
+            <div style={{ fontSize: 9, color: T.textMuted, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Day Streak</div>
+          </div>
+        </div>
+
+        {/* Recent Transactions */}
+        <SH>Recent Activity</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, overflow: "hidden", marginBottom: 18 }}>
+          {[
+            { type: "earn", activity: "Workout", amount: 12, time: "2h ago", emoji: "🏋️", streak: "7-day" },
+            { type: "earn", activity: "Meditation", amount: 6, time: "4h ago", emoji: "🧘", streak: "7-day" },
+            { type: "burn", activity: "Pro Analytics", amount: -15, time: "1d ago", emoji: "📊", streak: "" },
+            { type: "earn", activity: "Run", amount: 14.4, time: "1d ago", emoji: "🏃", streak: "7-day" },
+            { type: "earn", activity: "Nutrition Goal", amount: 9.6, time: "2d ago", emoji: "🥗", streak: "7-day" },
+            { type: "burn", activity: "Coaching Session", amount: -25, time: "3d ago", emoji: "🎓", streak: "" },
+            { type: "earn", activity: "IRONMAN Training", amount: 30, time: "3d ago", emoji: "🔱", streak: "7-day" },
+          ].map((tx, i, arr) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 15px", borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none" }}>
+              <div style={{ fontSize: 20 }}>{tx.emoji}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 500 }}>{tx.activity}</div>
+                <div style={{ fontSize: 10, color: T.textMuted }}>{tx.time}{tx.streak ? ` · ${tx.streak} streak` : ""}</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, fontFamily: T.font.mono, color: tx.type === "earn" ? T.success : T.danger }}>
+                {tx.type === "earn" ? "+" : ""}{tx.amount} TRV
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Premium Features */}
+        <SH>Spend TRV</SH>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 18 }}>
+          {[
+            { name: "Advanced Analytics", cost: 50, emoji: "📊", desc: "Detailed performance insights" },
+            { name: "AI Coaching Session", cost: 100, emoji: "🤖", desc: "Personalized workout plans" },
+            { name: "Premium Meditations", cost: 30, emoji: "🎵", desc: "Exclusive guided sessions" },
+            { name: "Challenge Entry", cost: 25, emoji: "🏆", desc: "Community competitions" },
+          ].map((f, i) => (
+            <div key={i} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13 }}>
+              <div style={{ fontSize: 28, flexShrink: 0 }}>{f.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1 }}>{f.name}</div>
+                <div style={{ fontSize: 10.5, color: T.textMuted }}>{f.desc}</div>
+              </div>
+              <button style={btnStyle(`${T.accent}15`, T.accent, { border: `1px solid ${T.accent}30`, fontSize: 11, padding: "6px 12px" })}>
+                {f.cost} TRV
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Contract Info */}
+        <SH>Contract Info</SH>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius.lg, padding: 16, marginBottom: 20 }}>
+          {[
+            { label: "Standard", value: "ERC-20" },
+            { label: "Network", value: "Polygon (MATIC)" },
+            { label: "Decimals", value: "18" },
+            { label: "Max Supply", value: "100,000,000 TRV" },
+          ].map((item, i, arr) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none" }}>
+              <span style={{ fontSize: 12, color: T.textMuted }}>{item.label}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, fontFamily: T.font.mono }}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </>}
+      <div style={{ height: 30 }} />
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
