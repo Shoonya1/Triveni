@@ -160,6 +160,71 @@ const ACHIEVEMENTS = [
   {emoji:"🌊",label:"Flow State",earned:true},{emoji:"🏔️",label:"Summit",earned:false},
 ];
 
+// ─── NUTRITION V4 DATA ──────────────────────────────────
+const NC = { blue:"#5B8EC4", orange:"#D4935B", teal:"#40C9A2", yellow:"#D4C35B", purple:"#9B6BC4" };
+
+const MEALS_V4 = [
+  {id:"breakfast",label:"Breakfast",icon:"🌅"},
+  {id:"lunch",label:"Lunch",icon:"☀️"},
+  {id:"snacks",label:"Snacks",icon:"🍪"},
+  {id:"dinner",label:"Dinner",icon:"🌙"},
+  {id:"others",label:"Others",icon:"➕"},
+];
+
+const NUTR_API_URL = "https://api.anthropic.com/v1/messages";
+const NUTR_SYS = `You are a precision nutrition engine for TRIVENI. You have web search. For EVERY food item, search USDA FoodData Central, Nutritionix, CalorieKing, or IFCT/NIN. Return ONLY a JSON array: {"name":string,"quantity":string,"grams":number,"source":string,"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"sugar":number,"saturated_fat":number,"trans_fat":number,"cholesterol":number,"sodium":number,"potassium":number,"calcium":number,"iron":number,"vitamin_a":number,"vitamin_c":number,"vitamin_d":number,"vitamin_b12":number,"magnesium":number,"zinc":number,"phosphorus":number,"category":string} JSON array ONLY.`;
+const NUTR_SEARCH_SYS = `You are a food database for TRIVENI. You have web search. Return 6-8 variations with full nutrition from USDA/Nutritionix/IFCT. Same JSON format. JSON array ONLY.`;
+const NUTR_IMG_SYS = `You are a nutrition engine with vision for TRIVENI. You have web search. Identify foods, search web, return JSON array with grams. JSON array ONLY.`;
+
+function nutrEnsureN(it) {
+  const keys = ["calories","protein","carbs","fat","fiber","sugar","saturated_fat","trans_fat","cholesterol","sodium","potassium","calcium","iron","vitamin_a","vitamin_c","vitamin_d","vitamin_b12","magnesium","zinc","phosphorus","grams"];
+  const o = {...it}; keys.forEach(k => { o[k] = Number(o[k]) || 0; }); return o;
+}
+
+function nutrGetHealth(it) {
+  if (!it) return { l: "moderate", c: NC.yellow };
+  const p = it.protein||0, f = it.fat||0, s = it.sugar||0, fi = it.fiber||0, cal = it.calories||0;
+  if (p > 15 && fi > 3 && s < 8 && f < 15) return { l: "healthy", c: T.success };
+  if (s > 20 || f > 25 || (cal > 400 && p < 10)) return { l: "unhealthy", c: T.danger };
+  return { l: "moderate", c: NC.yellow };
+}
+
+const FREQ_V4 = [
+  {name:"Masala Omelette",quantity:"1 Egg",grams:81,calories:102,protein:7,carbs:1,fat:8,fiber:0,sugar:1,category:"Protein",saturated_fat:2.5,trans_fat:0,cholesterol:186,sodium:150,potassium:70,calcium:28,iron:1,vitamin_a:80,vitamin_c:0,vitamin_d:1,vitamin_b12:0.5,magnesium:6,zinc:0.6,phosphorus:99,source:"IFCT"},
+  {name:"Apple",quantity:"1 Piece",grams:169,calories:96,protein:0.5,carbs:25,fat:0.3,fiber:4,sugar:19,category:"Fruit",saturated_fat:0,trans_fat:0,cholesterol:0,sodium:2,potassium:195,calcium:10,iron:0.2,vitamin_a:5,vitamin_c:8,vitamin_d:0,vitamin_b12:0,magnesium:9,zinc:0.1,phosphorus:20,source:"USDA"},
+  {name:"Chicken Biryani",quantity:"1 Bowl",grams:200,calories:346,protein:18,carbs:42,fat:12,fiber:1,sugar:2,category:"Meal",saturated_fat:3,trans_fat:0,cholesterol:55,sodium:520,potassium:220,calcium:30,iron:2,vitamin_a:15,vitamin_c:3,vitamin_d:0,vitamin_b12:0.3,magnesium:30,zinc:2,phosphorus:180,source:"IFCT"},
+  {name:"Bread Slice",quantity:"1 Slice",grams:27,calories:72,protein:2.5,carbs:13,fat:1,fiber:0.7,sugar:1.5,category:"Carb",saturated_fat:0.2,trans_fat:0,cholesterol:0,sodium:130,potassium:35,calcium:40,iron:1,vitamin_a:0,vitamin_c:0,vitamin_d:0,vitamin_b12:0,magnesium:7,zinc:0.2,phosphorus:25,source:"USDA"},
+  {name:"Paneer Tikka",quantity:"4 Pcs",grams:120,calories:265,protein:18,carbs:5,fat:20,fiber:0.5,sugar:2,category:"Protein",saturated_fat:10,trans_fat:0,cholesterol:60,sodium:380,potassium:100,calcium:350,iron:0.5,vitamin_a:80,vitamin_c:2,vitamin_d:0,vitamin_b12:0.8,magnesium:20,zinc:1.5,phosphorus:280,source:"IFCT"},
+  {name:"Banana",quantity:"1 Medium",grams:118,calories:105,protein:1.3,carbs:27,fat:0.4,fiber:3,sugar:14,category:"Fruit",saturated_fat:0,trans_fat:0,cholesterol:0,sodium:1,potassium:422,calcium:6,iron:0.3,vitamin_a:4,vitamin_c:10,vitamin_d:0,vitamin_b12:0,magnesium:32,zinc:0.2,phosphorus:26,source:"USDA"},
+  {name:"Dal Tadka",quantity:"1 Bowl",grams:180,calories:150,protein:9,carbs:20,fat:4,fiber:5,sugar:2,category:"Protein",saturated_fat:0.5,trans_fat:0,cholesterol:0,sodium:400,potassium:350,calcium:30,iron:3,vitamin_a:5,vitamin_c:2,vitamin_d:0,vitamin_b12:0,magnesium:40,zinc:1.5,phosphorus:150,source:"IFCT"},
+  {name:"Whey Protein",quantity:"1 Scoop",grams:32,calories:120,protein:24,carbs:3,fat:1.5,fiber:0,sugar:1,category:"Protein",saturated_fat:0.5,trans_fat:0,cholesterol:35,sodium:130,potassium:160,calcium:120,iron:0.5,vitamin_a:0,vitamin_c:0,vitamin_d:0,vitamin_b12:0.3,magnesium:20,zinc:2,phosphorus:100,source:"Nutritionix"},
+  {name:"Watermelon",quantity:"1 Bowl",grams:100,calories:30,protein:0.6,carbs:8,fat:0.2,fiber:0.4,sugar:6,category:"Fruit",saturated_fat:0,trans_fat:0,cholesterol:0,sodium:1,potassium:112,calcium:7,iron:0.2,vitamin_a:28,vitamin_c:8,vitamin_d:0,vitamin_b12:0,magnesium:10,zinc:0.1,phosphorus:11,source:"USDA"},
+  {name:"Chicken Tandoori",quantity:"1 Piece",grams:137,calories:218,protein:22,carbs:4,fat:13,fiber:0.5,sugar:1,category:"Protein",saturated_fat:3.5,trans_fat:0,cholesterol:85,sodium:420,potassium:250,calcium:20,iron:1.5,vitamin_a:30,vitamin_c:2,vitamin_d:0,vitamin_b12:0.5,magnesium:25,zinc:2,phosphorus:200,source:"IFCT"},
+  {name:"Pineapple",quantity:"1 Bowl",grams:100,calories:50,protein:0.5,carbs:13,fat:0.1,fiber:1.4,sugar:10,category:"Fruit",saturated_fat:0,trans_fat:0,cholesterol:0,sodium:1,potassium:109,calcium:13,iron:0.3,vitamin_a:3,vitamin_c:48,vitamin_d:0,vitamin_b12:0,magnesium:12,zinc:0.1,phosphorus:8,source:"USDA"},
+  {name:"Chicken Tikka",quantity:"1 Piece",grams:44,calories:78,protein:9,carbs:2,fat:4,fiber:0.2,sugar:0.5,category:"Protein",saturated_fat:1,trans_fat:0,cholesterol:30,sodium:180,potassium:90,calcium:10,iron:0.5,vitamin_a:10,vitamin_c:1,vitamin_d:0,vitamin_b12:0.2,magnesium:10,zinc:0.8,phosphorus:80,source:"IFCT"},
+];
+
+const QCATS_V4 = [
+  {e:"🥚",l:"Eggs"},{e:"🍗",l:"Chicken"},{e:"🍚",l:"Rice"},{e:"🫘",l:"Dal"},
+  {e:"🥛",l:"Milk"},{e:"🍌",l:"Banana"},{e:"🥜",l:"Nuts"},{e:"🍞",l:"Roti"},
+  {e:"🥗",l:"Salad"},{e:"🐟",l:"Fish"},{e:"🧀",l:"Paneer"},{e:"🥣",l:"Oats"},
+  {e:"💪",l:"Whey"},{e:"🍎",l:"Apple"},{e:"🧈",l:"Ghee"},{e:"🍠",l:"Sweet Potato"},
+];
+
+const MICROS_V4 = [
+  {key:"cholesterol",label:"Cholesterol",unit:"mg",dv:300,color:NC.orange},
+  {key:"potassium",label:"Potassium",unit:"mg",dv:4700,color:NC.teal},
+  {key:"calcium",label:"Calcium",unit:"mg",dv:1000,color:T.text},
+  {key:"iron",label:"Iron",unit:"mg",dv:18,color:T.danger},
+  {key:"vitamin_a",label:"Vit A",unit:"mcg",dv:900,color:NC.orange},
+  {key:"vitamin_c",label:"Vit C",unit:"mg",dv:90,color:NC.yellow},
+  {key:"vitamin_d",label:"Vit D",unit:"mcg",dv:20,color:T.accent},
+  {key:"vitamin_b12",label:"B12",unit:"mcg",dv:2.4,color:T.danger},
+  {key:"magnesium",label:"Magnesium",unit:"mg",dv:420,color:T.success},
+  {key:"zinc",label:"Zinc",unit:"mg",dv:11,color:NC.blue},
+  {key:"phosphorus",label:"Phosphorus",unit:"mg",dv:1250,color:NC.purple},
+];
+
 // ─── HELPERS ──────────────────────────────────────────────
 const fmt=s=>`${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 const stars=n=>Array.from({length:5},(_,i)=><span key={i} style={{color:i<n?T.accent:T.textDim,fontSize:9}}>●</span>);
@@ -592,83 +657,359 @@ function YogaPoseDetail({p,back}){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NUTRITION SCREEN
+// NUTRITION SCREEN (v4 — AI-powered with full micronutrient tracking)
 // ═══════════════════════════════════════════════════════════════
+
+function NutrDot({item}){const h=nutrGetHealth(item);return <span style={{width:8,height:8,borderRadius:"50%",background:h.c,display:"inline-block",flexShrink:0}}/>;}
+
+function NutrScoreRing({items}){
+  const n=items.length;
+  if(!n)return(<div style={{width:54,height:54,borderRadius:"50%",border:`3px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:12,color:T.textMuted}}>?</span><span style={{fontSize:7,color:T.textMuted}}>Score</span></div>);
+  const h=items.filter(i=>nutrGetHealth(i).l==="healthy").length;const s=Math.round((h/n)*100);const c=s>=70?T.success:s>=40?NC.yellow:T.danger;const r=21,ci=2*Math.PI*r;
+  return(<div style={{position:"relative",width:54,height:54}}><svg width={54} height={54} style={{transform:"rotate(-90deg)"}}><circle cx={27} cy={27} r={r} fill="none" stroke={T.border} strokeWidth={3.5}/><circle cx={27} cy={27} r={r} fill="none" stroke={c} strokeWidth={3.5} strokeDasharray={ci} strokeDashoffset={ci*(1-s/100)} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s"}}/></svg><div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:13,fontWeight:700,color:c}}>{s}</span><span style={{fontSize:7,color:T.textMuted}}>Score</span></div></div>);
+}
+
+function NutrMRing({value,max,color,label,size=46}){
+  const p=Math.min(value/(max||1),1),r=(size-6)/2,ci=2*Math.PI*r;
+  return(<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><svg width={size} height={size} style={{transform:"rotate(-90deg)"}}><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={T.border} strokeWidth={3}/><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={3} strokeDasharray={ci} strokeDashoffset={ci*(1-p)} strokeLinecap="round" style={{transition:"stroke-dashoffset .8s"}}/></svg><span style={{fontSize:10,fontWeight:700,color}}>{Math.round(value)}</span><span style={{fontSize:7,color:T.textMuted,textTransform:"uppercase",letterSpacing:1}}>{label}</span></div>);
+}
+
+function NutrLoader({msg}){return(<div style={{marginTop:8,padding:"10px 12px",borderRadius:10,background:`${T.accent}06`,border:`1px solid ${T.accent}15`,display:"flex",alignItems:"center",gap:10}}><div style={{width:16,height:16,border:`2px solid ${T.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"nutrSpin 1s linear infinite",flexShrink:0}}/><div style={{fontSize:11,fontWeight:600,color:T.accent}}>{msg}</div></div>);}
+
 function NutritionScreen(){
-  const [input,setInput]=useState("");
-  const [meals,setMeals]=useState([
-    {name:"Oats",time:"7:00 AM",cal:154,p:5,c:27,f:2.6},
-    {name:"Banana",time:"7:30 AM",cal:89,p:1.1,c:23,f:0.3},
-    {name:"Coffee",time:"8:00 AM",cal:70,p:1,c:10,f:2},
-    {name:"Chapati x2 + Dal",time:"12:30 PM",cal:438,p:20.2,c:70,f:8.2},
-    {name:"Curd",time:"1:00 PM",cal:98,p:11,c:4,f:4.3},
-    {name:"Protein Shake",time:"5:30 PM",cal:180,p:25,c:12,f:3},
-  ]);
-  const [sugg,setSugg]=useState([]);
-  const [analyzing,setAnalyzing]=useState(false);
-  const fileRef=useRef(null);
+  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem('triveni_api_key') || ''; } catch { return ''; } });
+  const [showSettings, setShowSettings] = useState(false);
+  const [goals, setGoals] = useState(() => { try { const s = localStorage.getItem('triveni_nutr_goals'); return s ? JSON.parse(s) : {calories:2200,protein:140,carbs:275,fat:73}; } catch { return {calories:2200,protein:140,carbs:275,fat:73}; } });
+  const [editGoals, setEditGoals] = useState(null);
+  const [ml, setMl] = useState({breakfast:[],lunch:[],snacks:[],dinner:[],others:[]});
+  const [sub, setSub] = useState("log");
+  const [am, setAm] = useState(null);
+  const [cart, setCart] = useState({breakfast:[],lunch:[],snacks:[],dinner:[],others:[]});
+  const [cms, setCms] = useState("breakfast");
+  const [sq, setSq] = useState("");
+  const [sr, setSr] = useState([]);
+  const [sLoading, setSLoading] = useState(false);
+  const [sErr, setSErr] = useState(null);
+  const [ld, setLd] = useState(false);
+  const [lm, setLm] = useState("");
+  const [err, setErr] = useState(null);
+  const [inp, setInp] = useState("");
+  const [imgPreview, setImgPreview] = useState(null);
+  const [imgData, setImgData] = useState(null);
+  const fr = useRef(null);
+  const [wd] = useState(() => Array.from({length:7}, (_,i) => ({cal: i===6 ? 0 : Math.floor(Math.random()*800+1400)})));
 
-  const tot=meals.reduce((a,m)=>({cal:a.cal+m.cal,p:a.p+m.p,c:a.c+m.c,f:a.f+m.f}),{cal:0,p:0,c:0,f:0});
-  const goal={cal:2200,p:140,c:275,f:73};
+  useEffect(() => { try { localStorage.setItem('triveni_api_key', apiKey); } catch {} }, [apiKey]);
+  useEffect(() => { try { localStorage.setItem('triveni_nutr_goals', JSON.stringify(goals)); } catch {} }, [goals]);
+  useEffect(() => { if (!ld && !sLoading) return; const ms = ld ? ["Searching USDA...","Fetching nutrition data...","Almost there..."] : ["Searching database...","Finding variations...","Compiling results..."]; let i = 0; setLm(ms[0]); const iv = setInterval(() => { i = (i+1)%ms.length; setLm(ms[i]); }, 2500); return () => clearInterval(iv); }, [ld, sLoading]);
 
-  const onInput=v=>{setInput(v);if(v.length>1){setSugg(Object.keys(FOOD_DB).filter(k=>k.includes(v.toLowerCase())).slice(0,6));}else setSugg([]);};
-  const addFood=name=>{const fd=FOOD_DB[name.toLowerCase()];if(fd){const t=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});setMeals(p=>[...p,{name:cap(name),time:t,...fd}]);}setInput("");setSugg([]);};
-  const simCam=()=>{setAnalyzing(true);setTimeout(()=>{addFood(["rice","chapati","dal","sabzi","salad","dosa","idli"][Math.floor(Math.random()*7)]);setAnalyzing(false);},2000);};
-  const onUpload=e=>{if(e.target.files?.[0]){setAnalyzing(true);setTimeout(()=>{addFood(["biryani","paratha","paneer","chicken breast","sambar"][Math.floor(Math.random()*5)]);setAnalyzing(false);},2000);}};
-  const calPct=Math.min(tot.cal/goal.cal,1);const calCirc=2*Math.PI*46;
+  const all = Object.values(ml).flat();
+  const sumK = k => all.reduce((a,i) => a + (i[k]||0), 0);
+  const tot = {};
+  ["calories","protein","carbs","fat","fiber","sugar","cholesterol","sodium","potassium","calcium","iron","vitamin_a","vitamin_c","vitamin_d","vitamin_b12","magnesium","zinc","phosphorus","saturated_fat","trans_fat"].forEach(k => { tot[k] = sumK(k); });
+  const mealCal = sl => ml[sl].reduce((a,i) => a + (i.calories||0), 0);
+  const cartCount = Object.values(cart).flat().length;
 
-  return(<div style={{padding:"0 20px"}}>
-    <PH icon={I.Food} title="Nutrition" subtitle="Track your daily intake" color={T.nutr}/>
-    {/* Ring + Macros */}
-    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:T.radius.xl,padding:22,marginTop:14,marginBottom:18,display:"flex",alignItems:"center",gap:22}}>
-      <div style={{position:"relative",width:105,height:105,flexShrink:0}}>
-        <svg width="105" height="105" viewBox="0 0 105 105" style={{transform:"rotate(-90deg)"}}><circle cx="52.5" cy="52.5" r="46" fill="none" stroke={T.border} strokeWidth="7"/><circle cx="52.5" cy="52.5" r="46" fill="none" stroke={T.nutr} strokeWidth="7" strokeDasharray={calCirc} strokeDashoffset={calCirc*(1-calPct)} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.6s ease"}}/></svg>
-        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center"}}><div style={{fontSize:20,fontWeight:700}}>{Math.round(tot.cal)}</div><div style={{fontSize:8.5,color:T.textMuted}}>/ {goal.cal}</div></div>
+  async function callNutrAPI(sys, msgs) {
+    if (!apiKey) throw new Error("Set your Anthropic API key in ⚙️ Settings");
+    const r = await fetch(NUTR_API_URL, { method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}, body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:sys,messages:msgs,tools:[{type:"web_search_20250305",name:"web_search"}]}) });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || `API error ${r.status}`); }
+    const d = await r.json(); const t = (d.content||[]).filter(b => b.type==="text").map(b => b.text).join("\n"); const m = t.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error("No nutrition data found"); return JSON.parse(m[0].replace(/```json|```/g,"").trim());
+  }
+
+  async function doSearch(q) { if (!q.trim()) return; setSLoading(true); setSErr(null); try { const p = await callNutrAPI(NUTR_SEARCH_SYS,[{role:"user",content:`Search for: ${q.trim()}`}]); if (Array.isArray(p)) setSr(p.map(i=>({...nutrEnsureN(i),_id:Date.now()+Math.random()}))); else throw new Error("No results"); } catch(e) { setSErr(e.message); setSr([]); } setSLoading(false); }
+
+  async function doLog(sl) { if (!inp.trim() && !imgData) return; setLd(true); setErr(null); try { const msgs = imgData ? [{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:imgData}},{type:"text",text:inp.trim()||"Analyze this food"}]}] : [{role:"user",content:`Search web for nutritional data: ${inp.trim()}`}]; const p = await callNutrAPI(imgData?NUTR_IMG_SYS:NUTR_SYS,msgs); if (Array.isArray(p)&&p.length) { const st=p.map(i=>({...nutrEnsureN(i),id:Date.now()+Math.random(),time:new Date()})); setMl(pr=>({...pr,[sl]:[...pr[sl],...st]})); setInp(""); setImgPreview(null); setImgData(null); setAm(null); } else throw new Error("Empty result"); } catch(e) { setErr(e.message); } setLd(false); }
+
+  function addCart(it, sl) { setCart(p => ({...p, [sl]: [...p[sl], {...nutrEnsureN(it), id:Date.now()+Math.random(), time:new Date()}]})); }
+  function rmCart(sl, xid) { setCart(p => ({...p, [sl]: p[sl].filter(x => x.id !== xid)})); }
+  function commitCart() { setMl(p => { const n={...p}; Object.keys(cart).forEach(sl => { n[sl]=[...n[sl],...cart[sl]]; }); return n; }); setCart({breakfast:[],lunch:[],snacks:[],dinner:[],others:[]}); setSub("log"); }
+  function addFreq(it, sl) { setMl(p => ({...p, [sl]: [...p[sl], {...nutrEnsureN(it), id:Date.now()+Math.random(), time:new Date()}]})); }
+  function rmItem(sl, xid) { setMl(p => ({...p, [sl]: p[sl].filter(x => x.id !== xid)})); }
+  function handleImg(e) { const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{setImgPreview(ev.target.result);setImgData(ev.target.result.split(",")[1]);}; r.readAsDataURL(f); }
+  function saveGoals() { if (editGoals) { setGoals({...editGoals}); setEditGoals(null); } }
+
+  return(
+    <div style={{padding:"0 20px"}}>
+      {/* Header */}
+      <div style={{paddingTop:50,paddingBottom:6}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:3}}>
+          <span style={{color:T.nutr}}><I.Food/></span>
+          <h1 style={{fontSize:24,fontFamily:T.font.display,fontWeight:600,margin:0,color:T.nutr,flex:1}}>Nutrition</h1>
+          <button onClick={()=>setShowSettings(!showSettings)} style={{background:showSettings?`${T.accent}18`:"none",border:showSettings?`1px solid ${T.accent}30`:`1px solid ${T.border}`,color:showSettings?T.accent:T.textMuted,cursor:"pointer",padding:"6px 8px",borderRadius:T.radius.sm,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font.body,fontSize:11,gap:4}}>⚙️</button>
+        </div>
+        <p style={{fontSize:12.5,color:T.textMuted,margin:0}}>AI-powered nutrition tracking</p>
       </div>
-      <div style={{flex:1}}>
-        <div style={{fontSize:11,color:T.textMuted,letterSpacing:"0.06em",textTransform:"uppercase",fontWeight:600,marginBottom:10}}>Macros</div>
-        {[{l:"Protein",v:tot.p,m:goal.p,c:"#30A89E"},{l:"Carbs",v:tot.c,m:goal.c,c:"#EAB308"},{l:"Fat",v:tot.f,m:goal.f,c:"#E05555"}].map((x,i)=>(
-          <div key={i} style={{marginBottom:7}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:3}}><span style={{color:T.textMuted}}>{x.l}</span><span style={{fontWeight:600}}>{x.v.toFixed(0)}<span style={{color:T.textDim}}>/{x.m}g</span></span></div>
-            <div style={{height:3,background:T.border,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min((x.v/x.m)*100,100)}%`,background:x.c,borderRadius:2,transition:"width 0.4s"}}/></div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:T.radius.lg,padding:16,marginBottom:14,animation:"nutrFadeSlide .3s ease"}}>
+          <div style={{fontSize:11,color:T.textMuted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,marginBottom:10}}>Settings</div>
+          <div style={{marginBottom:12}}>
+            <label style={{fontSize:11,color:T.textSoft,fontWeight:500,display:"block",marginBottom:4}}>Anthropic API Key</label>
+            <input value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-..." type="password" style={{width:"100%",padding:"9px 12px",background:T.bg,border:`1px solid ${T.border}`,borderRadius:T.radius.sm,color:T.text,fontSize:12,outline:"none",fontFamily:T.font.mono,boxSizing:"border-box"}}/>
+            <div style={{fontSize:9,color:T.textMuted,marginTop:3}}>Required for AI food search & image analysis</div>
           </div>
+          <div style={{fontSize:11,color:T.textMuted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,marginBottom:8}}>Daily Goals</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {[{k:"calories",l:"Calories",u:"kcal",c:T.accent},{k:"protein",l:"Protein",u:"g",c:T.body},{k:"carbs",l:"Carbs",u:"g",c:NC.yellow},{k:"fat",l:"Fat",u:"g",c:T.danger}].map(g=>(
+              <div key={g.k}>
+                <label style={{fontSize:10,color:g.c,fontWeight:600,display:"block",marginBottom:3}}>{g.l} ({g.u})</label>
+                <input type="number" value={(editGoals||goals)[g.k]} onChange={e=>{const v=Number(e.target.value)||0; setEditGoals(p=>({...(p||goals),[g.k]:v}));}} style={{width:"100%",padding:"7px 10px",background:T.bg,border:`1px solid ${T.border}`,borderRadius:T.radius.sm,color:T.text,fontSize:13,fontWeight:600,outline:"none",fontFamily:T.font.mono,boxSizing:"border-box"}}/>
+              </div>
+            ))}
+          </div>
+          {editGoals && <button onClick={saveGoals} style={{marginTop:10,width:"100%",padding:"9px",background:T.body,color:T.bg,border:"none",borderRadius:T.radius.md,fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:T.font.body}}>Save Goals ✓</button>}
+          <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+            {[{l:"Maintenance",v:{calories:2200,protein:140,carbs:275,fat:73}},{l:"IRONMAN",v:{calories:2800,protein:160,carbs:350,fat:90}},{l:"Fat Loss",v:{calories:1800,protein:160,carbs:180,fat:60}},{l:"Muscle Gain",v:{calories:2600,protein:180,carbs:320,fat:80}}].map(pr=>(
+              <button key={pr.l} onClick={()=>{setGoals(pr.v);setEditGoals(null);}} style={{padding:"5px 10px",background:T.bg,border:`1px solid ${T.border}`,borderRadius:T.radius.full,color:T.textSoft,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:T.font.body}}>{pr.l}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard */}
+      <div style={{background:T.card,borderRadius:T.radius.xl,padding:"14px 16px",border:`1px solid ${T.border}`,marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div><span style={{fontFamily:T.font.display,fontSize:15,fontWeight:600}}>Today </span><span style={{fontSize:10,color:T.textMuted}}>{new Date().toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}</span></div>
+          <NutrScoreRing items={all}/>
+        </div>
+        <div style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+            <span style={{fontSize:26,fontWeight:700,fontFamily:T.font.display,color:T.accent}}>{Math.round(tot.calories)}</span>
+            <span style={{fontSize:11,color:T.textMuted}}>/ {goals.calories} kcal</span>
+          </div>
+          <div style={{height:5,background:T.border,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",borderRadius:3,background:`linear-gradient(90deg,${T.accent},${T.accent}88)`,width:`${Math.min((tot.calories/goals.calories)*100,100)}%`,transition:"width .8s"}}/></div>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-around"}}>
+          <NutrMRing value={tot.protein} max={goals.protein} color={T.body} label="Protein"/>
+          <NutrMRing value={tot.carbs} max={goals.carbs} color={NC.yellow} label="Carbs"/>
+          <NutrMRing value={tot.fat} max={goals.fat} color={T.danger} label="Fat"/>
+          <NutrMRing value={tot.fiber||0} max={60} color={T.success} label="Fibre"/>
+        </div>
+      </div>
+
+      {/* Sub Tabs */}
+      <div style={{display:"flex",gap:3,marginBottom:16,background:T.card,borderRadius:T.radius.md,padding:3}}>
+        {[{id:"log",l:"📋 Log"},{id:"search",l:"🔍 Search"},{id:"cart",l:`🛒 Cart${cartCount>0?` (${cartCount})`:""}`},{id:"trends",l:"📊 Trends"},{id:"micros",l:"🧬 Micros"}].map(t=>(
+          <button key={t.id} onClick={()=>{setSub(t.id);if(t.id!=="log")setAm(null);}} style={{flex:1,padding:"8px 0",background:sub===t.id?T.nutr:"transparent",color:sub===t.id?T.bg:T.textMuted,border:"none",borderRadius:T.radius.sm,fontWeight:600,fontSize:10,cursor:"pointer",fontFamily:T.font.body,transition:"all 0.2s"}}>{t.l}</button>
         ))}
-        <div style={{fontSize:11,color:tot.cal<goal.cal?T.success:T.danger,fontWeight:600,marginTop:6}}>{tot.cal<goal.cal?`${goal.cal-Math.round(tot.cal)} cal remaining`:`${Math.round(tot.cal)-goal.cal} cal over`}</div>
       </div>
-    </div>
 
-    {/* Input */}
-    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:T.radius.lg,padding:15,marginBottom:18}}>
-      <SH>Log Food</SH>
-      <div style={{display:"flex",alignItems:"center",gap:8,background:T.bg,border:`1px solid ${T.border}`,borderRadius:T.radius.md,padding:"9px 12px",marginBottom:10}}>
-        <I.Search/><input value={input} onChange={e=>onInput(e.target.value)} placeholder="Type a food item..." onKeyDown={e=>{if(e.key==="Enter"&&input)addFood(input);}} style={{flex:1,background:"none",border:"none",color:T.text,fontSize:13,outline:"none",fontFamily:T.font.body}}/>
-        {input&&<button onClick={()=>{setInput("");setSugg([]);}} style={{background:"none",border:"none",color:T.textDim,cursor:"pointer"}}><I.X/></button>}
-      </div>
-      {sugg.length>0&&<div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:T.radius.md,overflow:"hidden",marginBottom:10}}>
-        {sugg.map((s,i)=>(<button key={i} onClick={()=>addFood(s)} style={{width:"100%",padding:"10px 13px",background:"none",border:"none",borderBottom:i<sugg.length-1?`1px solid ${T.border}`:"none",color:T.text,fontSize:12.5,textAlign:"left",cursor:"pointer",display:"flex",justifyContent:"space-between",fontFamily:T.font.body}}>
-          <span style={{textTransform:"capitalize"}}>{s}</span><span style={{color:T.textMuted,fontSize:10.5}}>{FOOD_DB[s].cal} cal/{FOOD_DB[s].u}</span>
-        </button>))}
-      </div>}
-      <div style={{display:"flex",gap:7}}>
-        <button onClick={simCam} style={btnStyle(`${T.nutr}12`,T.nutr,{flex:1,justifyContent:"center",border:`1px solid ${T.nutr}28`,padding:"9px"})}><I.Cam/> Camera</button>
-        <button onClick={()=>fileRef.current?.click()} style={btnStyle(`${T.nutr}12`,T.nutr,{flex:1,justifyContent:"center",border:`1px solid ${T.nutr}28`,padding:"9px"})}><I.Upload/> Upload</button>
-        <input ref={fileRef} type="file" accept="image/*" onChange={onUpload} style={{display:"none"}}/>
-      </div>
-      {analyzing&&<div style={{marginTop:10,background:T.bg,border:`1px solid ${T.nutr}30`,borderRadius:T.radius.md,padding:16,textAlign:"center"}}>
-        <div style={{fontSize:28,marginBottom:6}}>🔍</div><div style={{fontSize:12,color:T.nutr,fontWeight:600}}>Analyzing food with AI...</div><div style={{fontSize:11,color:T.textMuted,marginTop:2}}>Identifying items & calculating nutrients</div>
-      </div>}
-    </div>
+      {/* ═══ FOOD LOG TAB ═══ */}
+      {sub==="log"&&!am&&(
+        <div>
+          {MEALS_V4.map(m=>{const it=ml[m.id],cal=mealCal(m.id);return(
+            <div key={m.id} style={{borderBottom:`1px solid ${T.border}`,padding:"12px 0"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:38,height:38,borderRadius:11,background:T.surface,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>{m.icon}</div>
+                  <div>
+                    <div style={{fontWeight:600,fontSize:14}}>{m.label}</div>
+                    <div style={{fontSize:10,color:T.textMuted}}>{it.length===0?"No food logged":`${it.length} item${it.length>1?"s":""} · ${Math.round(cal)} kcal`}</div>
+                  </div>
+                </div>
+                <button onClick={()=>setAm(m.id)} style={{width:34,height:34,borderRadius:"50%",border:"none",background:T.body,color:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              </div>
+              {it.length>0&&(
+                <div style={{marginTop:6,marginLeft:48}}>
+                  {it.map(item=>(
+                    <div key={item.id} style={{padding:"7px 0",borderBottom:`1px solid ${T.border}06`}}>
+                      <div style={{display:"flex",alignItems:"center",gap:7}}>
+                        <NutrDot item={item}/>
+                        <div style={{flex:1}}><span style={{fontSize:12,fontWeight:500}}>{item.name}</span><span style={{fontSize:10,color:T.textMuted,marginLeft:5}}>{item.quantity}{item.grams?` (${item.grams}g)`:""}</span></div>
+                        <span style={{fontSize:12,fontWeight:600,color:T.accent}}>{item.calories} kcal</span>
+                        <button onClick={()=>rmItem(m.id,item.id)} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"0 2px"}}>×</button>
+                      </div>
+                      <div style={{display:"flex",gap:10,marginTop:3,marginLeft:15}}>
+                        {[{l:"P",v:item.protein,c:T.body},{l:"C",v:item.carbs,c:NC.yellow},{l:"F",v:item.fat,c:T.danger},{l:"Fiber",v:item.fiber,c:T.success}].map(x=>(<span key={x.l} style={{fontSize:9,color:T.textMuted}}><span style={{color:x.c,fontWeight:700}}>{x.l}</span> {Math.round(x.v||0)}g</span>))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );})}
+          <div style={{display:"flex",gap:8,marginTop:14}}>
+            <button onClick={()=>setSub("trends")} style={{flex:1,padding:"11px",borderRadius:T.radius.md,border:`1px solid ${T.body}40`,background:"transparent",color:T.body,fontSize:12,fontWeight:600,fontFamily:T.font.body,cursor:"pointer"}}>📊 View Analysis</button>
+            <button onClick={()=>setSub("cart")} style={{flex:1,padding:"11px",borderRadius:T.radius.md,border:"none",background:`linear-gradient(135deg,${T.body},${T.bodyDark})`,color:"#fff",fontSize:12,fontWeight:600,fontFamily:T.font.body,cursor:"pointer"}}>🛒 Food Cart{cartCount>0?` (${cartCount})`:""}</button>
+          </div>
+        </div>
+      )}
 
-    {/* Log */}
-    <SH>Today's Log ({meals.length} items)</SH>
-    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:T.radius.lg,overflow:"hidden",marginBottom:30}}>
-      {meals.map((m,i)=>(<div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 15px",borderBottom:i<meals.length-1?`1px solid ${T.border}`:"none"}}>
-        <div style={{flex:1,minWidth:0}}><div style={{fontSize:13.5,fontWeight:500,marginBottom:1}}>{m.name}</div><div style={{fontSize:10.5,color:T.textMuted}}>{m.time}</div></div>
-        <div style={{textAlign:"right",marginRight:10}}><div style={{fontSize:13.5,fontWeight:600,color:T.nutr}}>{m.cal} cal</div><div style={{fontSize:9.5,color:T.textDim}}>P:{m.p.toFixed(0)} C:{m.c.toFixed(0)} F:{m.f.toFixed(0)}</div></div>
-        <button onClick={()=>setMeals(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.textDim,cursor:"pointer",padding:4}}><I.Trash/></button>
-      </div>))}
+      {/* ═══ ACTIVE MEAL (inside log tab) ═══ */}
+      {sub==="log"&&am&&(
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+            <button onClick={()=>{setAm(null);setErr(null);}} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:18}}>←</button>
+            <span style={{fontFamily:T.font.display,fontSize:17,fontWeight:600}}>{MEALS_V4.find(x=>x.id===am)?.label}</span>
+          </div>
+          {imgPreview&&(<div style={{position:"relative",marginBottom:8,borderRadius:10,overflow:"hidden",border:`1px solid ${T.border}`}}><img src={imgPreview} alt="" style={{width:"100%",maxHeight:130,objectFit:"cover",display:"block"}}/><button onClick={()=>{setImgPreview(null);setImgData(null);}} style={{position:"absolute",top:5,right:5,background:"rgba(0,0,0,.7)",border:"none",color:T.text,width:22,height:22,borderRadius:"50%",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button></div>)}
+          <div style={{display:"flex",gap:5,background:T.surface,borderRadius:T.radius.md,padding:5,border:`1px solid ${T.border}`,marginBottom:10}}>
+            <button onClick={()=>fr.current?.click()} style={{width:36,height:36,borderRadius:8,border:`1px solid ${T.border}`,background:T.card,color:imgData?T.accent:T.textMuted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><I.Cam/></button>
+            <input type="file" ref={fr} accept="image/*" capture="environment" onChange={handleImg} style={{display:"none"}}/>
+            <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();doLog(am);}}} placeholder="Search for a dish..." style={{flex:1,background:"none",border:"none",outline:"none",color:T.text,fontSize:13,fontFamily:T.font.body,padding:"8px 4px"}}/>
+            <button onClick={()=>doLog(am)} disabled={ld||(!inp.trim()&&!imgData)} style={{width:36,height:36,borderRadius:8,border:"none",background:(inp.trim()||imgData)&&!ld?T.body:T.border,color:"#fff",cursor:ld?"wait":"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ld?<div style={{width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"nutrSpin .8s linear infinite"}}/>:"→"}</button>
+          </div>
+          {ld&&<NutrLoader msg={lm}/>}
+          {err&&<div style={{marginTop:6,padding:"7px 12px",borderRadius:8,background:`${T.danger}12`,color:T.danger,fontSize:11}}>{err}</div>}
+          <div style={{display:"flex",gap:14,marginBottom:12,marginTop:10}}>{[{l:"Healthy",c:T.success},{l:"Moderate",c:NC.yellow},{l:"Unhealthy",c:T.danger}].map(h=>(<div key={h.l} style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:"50%",background:h.c}}/><span style={{fontSize:9,color:T.textMuted}}>{h.l}</span></div>))}</div>
+          <div style={{fontSize:10,textTransform:"uppercase",letterSpacing:"0.12em",color:T.textMuted,fontWeight:700,marginBottom:8}}>Frequently logged</div>
+          {FREQ_V4.map((item,i)=>(
+            <div key={i} style={{padding:"9px 0",borderBottom:`1px solid ${T.border}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <NutrDot item={item}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:500}}>{item.name}</div>
+                  <div style={{fontSize:10,color:T.textMuted}}>{item.quantity} ({item.grams}g) · {item.calories} kcal</div>
+                  <div style={{display:"flex",gap:8,marginTop:2}}>{[{l:"P",v:item.protein,c:T.body},{l:"C",v:item.carbs,c:NC.yellow},{l:"F",v:item.fat,c:T.danger},{l:"Fiber",v:item.fiber,c:T.success}].map(m=>(<span key={m.l} style={{fontSize:9,color:T.textMuted}}><span style={{color:m.c,fontWeight:700}}>{m.l}</span> {Math.round(m.v||0)}g</span>))}</div>
+                </div>
+                <button onClick={()=>addFreq(item,am)} style={{width:28,height:28,borderRadius:"50%",border:`1.5px solid ${T.body}`,background:"transparent",color:T.body,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ═══ SEARCH TAB ═══ */}
+      {sub==="search"&&(
+        <div>
+          <div style={{display:"flex",gap:5,background:T.surface,borderRadius:T.radius.md,padding:5,border:`1px solid ${T.border}`,marginBottom:10}}>
+            <div style={{width:36,height:36,borderRadius:8,background:T.card,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,flexShrink:0}}><I.Search/></div>
+            <input value={sq} onChange={e=>setSq(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")doSearch(sq);}} placeholder="Search any food..." style={{flex:1,background:"none",border:"none",outline:"none",color:T.text,fontSize:13,fontFamily:T.font.body,padding:"8px 4px"}}/>
+            <button onClick={()=>doSearch(sq)} disabled={sLoading||!sq.trim()} style={{width:36,height:36,borderRadius:8,border:"none",background:sq.trim()&&!sLoading?T.body:T.border,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sLoading?<div style={{width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"nutrSpin .8s linear infinite"}}/>:"→"}</button>
+          </div>
+          <div style={{display:"flex",gap:14,marginBottom:12}}>{[{l:"Healthy",c:T.success},{l:"Moderate",c:NC.yellow},{l:"Unhealthy",c:T.danger}].map(h=>(<div key={h.l} style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:"50%",background:h.c}}/><span style={{fontSize:9,color:T.textMuted}}>{h.l}</span></div>))}</div>
+          {sLoading&&<NutrLoader msg={lm}/>}
+          {sErr&&<div style={{marginBottom:8,padding:"7px 12px",borderRadius:8,background:`${T.danger}12`,color:T.danger,fontSize:11}}>{sErr}</div>}
+          {sr.length===0&&!sLoading&&(<>
+            <div style={{fontSize:10,textTransform:"uppercase",letterSpacing:"0.12em",color:T.textMuted,fontWeight:700,marginBottom:8}}>Quick Search</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
+              {QCATS_V4.map(c=>(<button key={c.l} onClick={()=>{setSq(c.l);doSearch(c.l);}} style={{padding:"6px 10px",borderRadius:T.radius.full,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:11,fontFamily:T.font.body,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}><span>{c.e}</span><span>{c.l}</span></button>))}
+            </div>
+          </>)}
+          {sr.length>0&&!sLoading&&(<>
+            <div style={{display:"flex",gap:4,marginBottom:10,overflowX:"auto"}}>
+              {MEALS_V4.map(m=>(<button key={m.id} onClick={()=>setCms(m.id)} style={{padding:"5px 10px",borderRadius:14,border:`1px solid ${cms===m.id?T.body:T.border}`,background:cms===m.id?`${T.body}15`:"transparent",color:cms===m.id?T.body:T.textMuted,fontSize:10,fontFamily:T.font.body,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{m.icon} {m.label}</button>))}
+            </div>
+            {sr.map((item,i)=>(
+              <div key={item._id} style={{background:T.card,borderRadius:T.radius.md,padding:"11px 13px",marginBottom:6,border:`1px solid ${T.border}`,animation:"nutrFadeSlide .3s ease forwards",animationDelay:`${i*.04}s`,opacity:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:7}}>
+                  <NutrDot item={item}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:600}}>{item.name}</div>
+                    <div style={{fontSize:10,color:T.textMuted}}>{item.quantity}{item.grams?` (${item.grams}g)`:""} · {item.calories} kcal</div>
+                    <div style={{display:"flex",gap:8,marginTop:2}}>{[{l:"P",v:item.protein,c:T.body},{l:"C",v:item.carbs,c:NC.yellow},{l:"F",v:item.fat,c:T.danger}].map(m=>(<span key={m.l} style={{fontSize:9,color:T.textMuted}}><span style={{color:m.c,fontWeight:600}}>{m.l}</span> {Math.round(m.v)}g</span>))}</div>
+                  </div>
+                  <button onClick={()=>addCart(item,cms)} style={{width:28,height:28,borderRadius:"50%",border:`1.5px solid ${T.body}`,background:"transparent",color:T.body,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                </div>
+                {item.source&&<div style={{fontSize:7,color:T.success,marginTop:3,marginLeft:15,textTransform:"uppercase",letterSpacing:.8}}>✓ {item.source}</div>}
+              </div>
+            ))}
+          </>)}
+        </div>
+      )}
+
+      {/* ═══ CART TAB ═══ */}
+      {sub==="cart"&&(
+        <div>
+          <div style={{fontFamily:T.font.display,fontSize:17,fontWeight:600,marginBottom:12}}>Food Cart</div>
+          {MEALS_V4.map(m=>(
+            <div key={m.id} style={{borderBottom:`1px solid ${T.border}`,padding:"11px 0"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontWeight:600,fontSize:14}}>{m.label}</span>
+                <button onClick={()=>{setCms(m.id);setSub("search");}} style={{width:30,height:30,borderRadius:"50%",border:"none",background:T.body,color:"#fff",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+              </div>
+              {cart[m.id].length>0&&(
+                <div style={{marginTop:5}}>
+                  {cart[m.id].map(item=>(
+                    <div key={item.id} style={{padding:"5px 0"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <NutrDot item={item}/>
+                        <span style={{flex:1,fontSize:12}}>{item.name}</span>
+                        <span style={{fontSize:11,color:T.accent,fontWeight:600}}>{item.calories} kcal</span>
+                        <button onClick={()=>rmCart(m.id,item.id)} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13}}>×</button>
+                      </div>
+                      <div style={{display:"flex",gap:8,marginTop:2,marginLeft:14}}>{[{l:"P",v:item.protein,c:T.body},{l:"C",v:item.carbs,c:NC.yellow},{l:"F",v:item.fat,c:T.danger}].map(x=>(<span key={x.l} style={{fontSize:9,color:T.textMuted}}><span style={{color:x.c,fontWeight:700}}>{x.l}</span> {Math.round(x.v||0)}g</span>))}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          <button onClick={commitCart} disabled={cartCount===0} style={{width:"100%",marginTop:18,padding:"13px",borderRadius:T.radius.lg,border:"none",background:cartCount>0?`linear-gradient(135deg,${T.body},${T.bodyDark})`:T.border,color:cartCount>0?"#fff":T.textMuted,fontFamily:T.font.body,fontSize:14,fontWeight:700,cursor:cartCount>0?"pointer":"default"}}>Add to log ({cartCount} items)</button>
+        </div>
+      )}
+
+      {/* ═══ TRENDS TAB ═══ */}
+      {sub==="trends"&&(
+        <div>
+          <div style={{background:T.card,borderRadius:T.radius.xl,padding:"18px",border:`1px solid ${T.border}`,marginBottom:14,textAlign:"center"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><button style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:16}}>‹</button><span style={{fontSize:13,fontWeight:600}}>This Week</span><button style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:16}}>›</button></div>
+            <div style={{position:"relative",width:110,height:110,margin:"0 auto 14px"}}>
+              <svg width={110} height={110} style={{transform:"rotate(-90deg)"}}><circle cx={55} cy={55} r={46} fill="none" stroke={T.border} strokeWidth={7}/><circle cx={55} cy={55} r={46} fill="none" stroke={T.body} strokeWidth={7} strokeDasharray={2*Math.PI*46} strokeDashoffset={2*Math.PI*46*0.3} strokeLinecap="round"/></svg>
+              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                <span style={{fontSize:8,color:T.textMuted,textTransform:"uppercase",letterSpacing:1,background:T.card,padding:"1px 7px",borderRadius:8,marginBottom:3}}>Avg Intake</span>
+                <span style={{fontSize:26,fontWeight:700,fontFamily:T.font.display,color:T.body}}>{Math.round(wd.reduce((a,d)=>a+d.cal,0)/7)}</span>
+                <span style={{fontSize:9,color:T.textMuted}}>kcal/day</span>
+              </div>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",height:100,gap:3,marginBottom:4,padding:"0 4px"}}>
+              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d,i)=>{const v=wd[i]?.cal||0;const diff=v-goals.calories;const pos=diff>0;const bH=Math.max(Math.abs(diff)/goals.calories*80,3);return(
+                <div key={d} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"center"}}>
+                  {pos&&<div style={{width:"55%",height:bH,borderRadius:"3px 3px 0 0",background:NC.yellow}}/>}
+                  <div style={{width:"100%",height:1,background:`${T.textMuted}30`}}/>
+                  {!pos&&<div style={{width:"55%",height:bH,borderRadius:"0 0 3px 3px",background:T.body}}/>}
+                </div>
+              );})}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-around",padding:"0 4px"}}>{["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=><span key={d} style={{fontSize:8,color:T.textMuted}}>{d}</span>)}</div>
+          </div>
+          <div style={{background:T.card,borderRadius:T.radius.lg,padding:"14px 16px",border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div><div style={{fontSize:12,fontWeight:600,color:T.body}}>Under goal</div><div style={{fontSize:20,fontWeight:700,fontFamily:T.font.display,color:T.body}}>{wd.filter(d=>d.cal<goals.calories&&d.cal>0).length} days</div></div>
+            <div style={{width:1,height:40,background:T.border}}/>
+            <div style={{textAlign:"right"}}><div style={{fontSize:12,fontWeight:600,color:NC.yellow}}>Over goal</div><div style={{fontSize:20,fontWeight:700,fontFamily:T.font.display,color:NC.yellow}}>{wd.filter(d=>d.cal>=goals.calories).length} days</div></div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MICROS TAB ═══ */}
+      {sub==="micros"&&(
+        <div>
+          {all.length===0?(
+            <div style={{textAlign:"center",padding:"36px 20px",color:T.textMuted}}><div style={{fontFamily:T.font.display,fontSize:14}}>Log meals to see data</div></div>
+          ):(<>
+            <div style={{background:T.card,borderRadius:T.radius.lg,padding:"14px 16px",border:`1px solid ${T.border}`,marginBottom:10}}>
+              <div style={{fontFamily:T.font.display,fontSize:15,fontWeight:600,color:T.accent,marginBottom:10}}>Macronutrients</div>
+              {[{l:"Protein",v:tot.protein,mx:goals.protein,c:T.body,u:"g"},{l:"Carbohydrates",v:tot.carbs,mx:goals.carbs,c:NC.yellow,u:"g"},{l:"Fat",v:tot.fat,mx:goals.fat,c:T.danger,u:"g"},{l:"Fibre",v:tot.fiber||0,mx:60,c:T.success,u:"g"},{l:"Sugar",v:tot.sugar||0,mx:50,c:NC.orange,u:"g"},{l:"Saturated Fat",v:sumK("saturated_fat")||0,mx:22,c:T.danger,u:"g"},{l:"Trans Fat",v:sumK("trans_fat")||0,mx:2,c:T.danger,u:"g"},{l:"Sodium",v:tot.sodium||0,mx:2300,c:T.textSoft,u:"mg"}].map(m=>(
+                <div key={m.l} style={{marginBottom:7}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:11,fontWeight:500}}>{m.l}</span><span style={{fontSize:10,color:m.c,fontWeight:600}}>{Math.round(m.v)}{m.u} <span style={{color:T.textMuted,fontWeight:400}}>/ {m.mx}{m.u}</span></span></div>
+                  <div style={{height:4,background:T.border,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:m.c,width:`${Math.min((m.v/(m.mx||1))*100,100)}%`,transition:"width .6s"}}/></div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:T.card,borderRadius:T.radius.lg,padding:"14px 16px",border:`1px solid ${T.border}`,marginBottom:10}}>
+              <div style={{fontFamily:T.font.display,fontSize:15,fontWeight:600,color:T.accent,marginBottom:10}}>Micronutrients vs Daily Value</div>
+              {MICROS_V4.map(m=>{const v=tot[m.key]||0,p=Math.min((v/m.dv)*100,100);return(
+                <div key={m.key} style={{marginBottom:7}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:11,fontWeight:500}}>{m.label}</span><span style={{fontSize:10,color:m.color,fontWeight:600}}>{Math.round(v*10)/10}{m.unit} <span style={{color:T.textMuted,fontWeight:400}}>({Math.round(p)}%)</span></span></div>
+                  <div style={{height:4,background:T.border,borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:p>=80?T.success:p>=40?m.color:`${T.danger}80`,width:`${p}%`,transition:"width .6s"}}/></div>
+                </div>
+              );})}
+            </div>
+            <div style={{background:`${T.accent}06`,borderRadius:10,padding:"10px 12px",border:`1px solid ${T.accent}12`,fontSize:10,color:T.textMuted,lineHeight:1.5}}><span style={{color:T.accent,fontWeight:700}}>IRONMAN Tip:</span> Red = below 40% DV. Endurance athletes need extra iron, Mg, Na & K.</div>
+          </>)}
+        </div>
+      )}
+
+      <div style={{height:30}}/>
+      <style>{`
+        @keyframes nutrSpin{to{transform:rotate(360deg)}}
+        @keyframes nutrFadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
-  </div>);
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
